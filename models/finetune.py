@@ -306,7 +306,7 @@ class LGR(nn.Module):
             split_text_embeddings = [s[i] for s,i in zip(split_text_embeddings, split_sorted_idxs)]
         elif self.select_sent is not None:
             print('using selected sents')
-            txt_ces_path = txt_embed_path.replace('txt_embed.npy', '%s_txt_ce.npy' % self.select_sent)
+            txt_ces_path = txt_embed_path.replace('train_txt_embed.npy', '%s_txt_ce.npy' % self.select_sent)
             assert osp.exists(txt_ces_path)
             text_ces = torch.from_numpy(np.load(txt_ces_path))  # [Nt, embed_dim]
             split_text_ces = torch.split(text_ces, self.sent_idxs)
@@ -394,7 +394,7 @@ def LGR_r50(pretrained=False, **kwargs):
         print("no ckpt file found")
         vis_backbone_path = args.pretrained_clip
     model.load_pretrained_model(
-        txt_embed_path=osp.join(args.pretrain_cvlp_path, "txt_embed.npy"),
+        txt_embed_path=osp.join(args.pretrain_cvlp_path, "train_txt_embed.npy"),
         vis_backbone_path=vis_backbone_path, img_grad=False
     )
 
@@ -424,7 +424,7 @@ def LGR_vit16(pretrained=False, **kwargs):
     )
 
     model.load_pretrained_model(
-        txt_embed_path=osp.join(args.pretrain_cvlp_path, "txt_embed.npy"),
+        txt_embed_path=osp.join(args.pretrain_cvlp_path, "train_txt_embed.npy"),
         vis_backbone_path=osp.join(args.pretrain_cvlp_path, "checkpoint.pth"),
         img_grad=False
     )
@@ -454,7 +454,7 @@ def LGR_r50_v_detach_img_grad(pretrained=False, **kwargs):
     )
 
     model.load_pretrained_model(
-        txt_embed_path=osp.join(args.pretrain_cvlp_path, "txt_embed.npy"),
+        txt_embed_path=osp.join(args.pretrain_cvlp_path, "train_txt_embed.npy"),
         vis_backbone_path=osp.join(args.pretrain_cvlp_path, "checkpoint.pth"),
     )
 
@@ -483,7 +483,7 @@ def LGR_vit16_v_detach_img_grad(pretrained=False, **kwargs):
     )
 
     model.load_pretrained_model(
-        txt_embed_path=osp.join(args.pretrain_cvlp_path, "txt_embed.npy"),
+        txt_embed_path=osp.join(args.pretrain_cvlp_path, "train_txt_embed.npy"),
         vis_backbone_path=osp.join(args.pretrain_cvlp_path, "checkpoint.pth"),
     )
 

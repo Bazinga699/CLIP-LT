@@ -1,8 +1,8 @@
 # 8 GPU
 cfg = dict(
     model='CVLP_vit16',
-    desc_path='data/imagenet',
-    pretrained_clip='pretrained/ViT-B-16.pt',
+    desc_path='/data/datasets/ImageNet_LT_test',
+    pretrained_clip='/data/pretrained_checkpoint/ViT-B-16.pt',
     context_length=75,
     pretrain_cvlp=True,
     loss_type="smoothCE",
@@ -14,11 +14,11 @@ cfg = dict(
     use_sqrt_freq=True,
     train_mode=False,
 
-    lr=3.5e-5,
+    lr=5e-5,
     min_lr=0.,
 
     epochs=50,
-    batch_size=128,
+    batch_size=32,
 
     repeated_aug=False,
     mixup=0.,
@@ -28,5 +28,5 @@ cfg = dict(
     distillation_type='logits',
     
     eval_pretrain=True,
-    test=True
+    test=False
 )

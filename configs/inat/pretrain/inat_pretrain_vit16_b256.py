@@ -14,7 +14,7 @@ cfg = dict(
     weight_sample=True,
     use_sqrt_freq=True,
 
-    lr=5e-4,
+    lr=3.5e-4,
     epochs=100,
     batch_size=32,
 

@@ -7,7 +7,7 @@ from torchvision.datasets.folder import ImageFolder, default_loader
 
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from timm.data import create_transform
-from mcloader import ClassificationDataset
+from mcloader import ClassificationDataset,ClassificationDatasetNori
 
 
 CLIP_DEFAULT_MEAN = (0.4815, 0.4578, 0.4082)
@@ -26,7 +26,7 @@ def build_dataset(split, args):
         nb_classes = 365
     else:
         nb_classes = 1000
-    dataset = ClassificationDataset(
+    dataset = ClassificationDatasetNori(
         args.data_set,
         split,
         nb_classes=nb_classes,

@@ -5,14 +5,14 @@ import pickle
 from torch.utils.data import Dataset
 
 from .imagenet import ImageNet
-from .image_list import ImageList
+from .image_list import ImageList, BaseLTnoriDataset
 from .inat import iNat
 from .preprocess import SentPreProcessor
 
 
 def get_sentence_tokens(dataset: str, desc_path, context_length):
     print('using clip text tokens splitted by sentence')
-    cache_root = 'cached'
+    cache_root = osp.join(desc_path, 'cached')
     cache_path = osp.join(cache_root, '%s_desc_text_sent.pkl' % dataset)
     clip_token_path = osp.join(cache_root, '%s_text_tokens.pkl' % dataset)
     if osp.exists(clip_token_path):
@@ -72,6 +72,43 @@ class ClassificationDataset(Dataset):
 
     def __getitem__(self, idx):
         img, target = self.data_source.get_sample(idx)
+        if self.pipeline is not None:
+            img = self.pipeline(img)
+
+        return img, target
+
+
+class ClassificationDatasetNori(Dataset):
+    """Dataset for classification.
+    """
+
+    def __init__(self, dataset='IMNET', split='train', nb_classes=1000,
+                 desc_path='', context_length=0, pipeline=None, select=False):
+        assert dataset in ['PLACES_LT', "IMNET", "IMNET_LT", "INAT"]
+        self.nb_classes = nb_classes
+        if dataset == 'IMNET':
+            self.data_source = ImageNet(root='data/imagenet/%s' % split,
+                                        list_file='data/imagenet/meta/%s.txt' % split,
+                                        select=select)
+        elif dataset == 'IMNET_LT':
+            self.data_source = BaseLTnoriDataset(ann_paths=[f'/data/datasets/ImageNet_LT/ImageNet_LT_{split}.json'], select=select)
+        elif dataset == 'INAT':
+            self.data_source = BaseLTnoriDataset(ann_paths=[f'/data/datasets/inaturalist2018/annotations/iNat18_{split}.json'], select=select)
+        elif dataset == 'PLACES_LT':
+            self.data_source = BaseLTnoriDataset(ann_paths=[f'/data/datasets/Places/annotations/Places_LT_{split}.json'], select=select)
+        
+        self.text_tokens = get_sentence_tokens(dataset, desc_path, context_length)
+        self.end_idxs = [len(sents) for sents in self.text_tokens]
+
+        self.pipeline = pipeline
+        assert self.data_source.labels is not None
+        self.targets = self.data_source.labels
+
+    def __len__(self):
+        return self.data_source.get_length()
+
+    def __getitem__(self, idx):
+        img, target = self.data_source.__getitem__(idx)
         if self.pipeline is not None:
             img = self.pipeline(img)
 

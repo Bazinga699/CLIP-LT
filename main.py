@@ -26,6 +26,8 @@ import utils
 import collections
 import os.path as osp
 import warnings
+import os
+import subprocess
 
 warnings.filterwarnings('ignore')
 
@@ -219,15 +221,52 @@ def get_args_parser():
     parser.add_argument('--world_size', default=1, type=int,
                         help='number of distributed processes')
     parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
-    parser.add_argument("--port", default=29500, type=int,
-                        help="Master node (rank 0)'s free port that needs to "
-                             "be used for communication during distributed "
-                             "training")
     parser.add_argument("--local_rank", default=0, type=int)
     return parser
 
 
+def configure_nccl():
+    if os.getenv("LAUNCH_SITE")=='hhe':
+        print('HHE init')
+        os.environ["NCCL_IB_DISABLE"] = "0"
+        os.environ["NCCL_DEBUG"] = "INFO"
+        os.environ["NCCL_SOCKET_IFNAME"]= "eth0"
+        os.environ["NCCL_IB_CUDA_SUPPORT"] = "1"
+        os.environ["NCCL_IB_HCA"] =  "mlx5_0,mlx5_2" # "mlx5_0,mlx5_1,mlx5_2,mlx5_5"
+        os.environ["NCCL_IB_GID_INDEX"] = "0"    ## change from 3 to 0
+        os.environ["NCCL_IB_TC"] = "106"
+        os.environ["NCCL_NET_GDR_READ"] = "1"
+        os.environ["NCCL_TREE_THRESHOLD"] = "0"
+        os.environ["OMP_NUM_THREADS"] = "4"
+        os.environ["CUDA_CACHE_MAXSIZE"] = "2147483647"
+        os.environ["CUDA_CACHE_PATH"] = "/data/.cuda_cache"
+    elif os.getenv("LAUNCH_SITE")=='hhd':
+        print('HHD init')
+        # os.environ["NCCL_LAUNCH_MODE"] = "PARALLEL"
+        #os.environ["NCCL_DEBUG"] = "INFO"
+        os.environ["NCCL_IB_HCA"] = subprocess.getoutput(
+        "cd /sys/class/infiniband/ > /dev/null; for i in mlx5_*; "
+        "do cat $i/ports/1/gid_attrs/types/* 2>/dev/null "
+        "| grep v >/dev/null && echo $i ; done; > /dev/null"
+        )
+        os.environ["NCCL_IB_GID_INDEX"] = "3"
+        os.environ["NCCL_IB_TC"] = "106"
+
+    elif os.getenv("LAUNCH_SITE")=='hhb':
+        print('HHB init')
+        os.environ["NCCL_IB_HCA"] = subprocess.getoutput(
+        "cd /sys/class/infiniband/ > /dev/null; for i in mlx5_*; "
+        "do cat $i/ports/1/gid_attrs/types/* 2>/dev/null "
+        "| grep v >/dev/null && echo $i ; done; > /dev/null"
+        )
+        os.environ["NCCL_IB_GID_INDEX"] = "3"
+        os.environ["NCCL_IB_TC"] = "106"
+        os.environ["NCCL_DEBUG"] = "INFO"
+    else:
+        return
+
 def main(args):
+    configure_nccl()
     utils.init_distributed_mode(args)
     # args.test = False
     print(args)
@@ -345,7 +384,7 @@ def main(args):
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
         model_without_ddp = model.module
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print('number of params:', n_parameters)
+    print('number of params: {} M'.format(n_parameters / 1000000))
 
     optimizer = create_optimizer(args, model_without_ddp)
     loss_scaler = NativeScaler()

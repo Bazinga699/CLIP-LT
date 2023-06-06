@@ -1,1 +1,1 @@
-from .classification import ClassificationDataset
+from .classification import ClassificationDataset, ClassificationDatasetNori
